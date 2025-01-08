@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Commit Message Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { padding-top: 2rem; }
+        .card { margin-bottom: 1rem; }
+        .commit-textarea { width: 100%; min-height: 100px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Commit Message Generator</h1>
+        
+        <!-- Mensaje de Commit -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Mensaje de Commit Generado</h5>
+                {% if last_commit_date %}
+                <small class="text-muted">Último commit: {{ last_commit_date }}</small>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <pre id="generated-commit">{{ commit_message }}</pre>
+                <div class="mt-3">
+                    <button class="btn btn-success" id="use-generated">Usar mensaje generado</button>
+                    <button class="btn btn-primary" id="write-custom">Escribir mensaje personalizado</button>
+                </div>
+                <div id="custom-commit-div" class="mt-3" style="display: none;">
+                    <textarea class="commit-textarea form-control" id="custom-commit" 
+                             placeholder="Escribe tu mensaje de commit personalizado"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historias de Jira -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Historias Asignadas</h5>
+            </div>
+            <div class="card-body">
+                {% for issue in issues %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6>{{ issue.key }}: {{ issue.summary }}</h6>
+                        <p>Estado: {{ issue.status }} | Prioridad: {{ issue.priority }}</p>
+                        <p>Tiempo registrado: {{ issue.time_spent }} | Tiempo restante: {{ issue.time_estimate }}</p>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control time-input" 
+                                   placeholder="Tiempo (ej: 1h 30m)" 
+                                   data-issue-key="{{ issue.key }}">
+                            <button class="btn btn-primary log-time-btn" 
+                                    data-issue-key="{{ issue.key }}">
+                                Registrar Tiempo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let useGeneratedMessage = true;
+            const generatedMessage = '{{ commit_message|tojson|safe }}';
+
+            $('#use-generated').click(function() {
+                useGeneratedMessage = true;
+                $('#custom-commit-div').hide();
+                $(this).addClass('btn-success').removeClass('btn-outline-success');
+                $('#write-custom').addClass('btn-primary').removeClass('btn-success');
+            });
+
+            $('#write-custom').click(function() {
+                useGeneratedMessage = false;
+                $('#custom-commit-div').show();
+                $(this).addClass('btn-success').removeClass('btn-primary');
+                $('#use-generated').addClass('btn-outline-success').removeClass('btn-success');
+                if (!$('#custom-commit').val()) {
+                    $('#custom-commit').val(generatedMessage);
+                }
+            });
+
+            $('.log-time-btn').click(function() {
+                const issueKey = $(this).data('issue-key');
+                const timeInput = $(`.time-input[data-issue-key="${issueKey}"]`);
+                const timeSpent = timeInput.val();
+                const commitMessage = useGeneratedMessage ? generatedMessage : $('#custom-commit').val();
+
+                if (!timeSpent) {
+                    alert('Por favor, ingresa el tiempo dedicado');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/log_time',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        ticket_id: issueKey,
+                        time_spent: timeSpent,
+                        commit_message: commitMessage
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        if (response.success) {
+                            timeInput.val('');
+                        }
+                    },
+                    error: function() {
+                        alert('Error al registrar el tiempo');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

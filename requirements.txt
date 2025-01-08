@@ -1,0 +1,7 @@
+python-dotenv
+atlassian-python-api
+jira
+openai
+requests
+flask
+flask-bootstrap 
