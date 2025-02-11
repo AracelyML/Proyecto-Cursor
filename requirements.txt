@@ -2,6 +2,7 @@ python-dotenv
 atlassian-python-api
 jira
 openai
+google-generativeai
 requests
 flask
 flask-bootstrap 

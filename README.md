@@ -4,12 +4,13 @@ Herramienta web que automatiza la generación de mensajes de commit y el registr
 
 ## 🚀 Características
 
-- 🤖 Genera mensajes de commit detallados y estructurados usando IA
+- 🤖 Genera mensajes de commit detallados usando IA (OpenAI o Gemini)
 - 📊 Analiza cambios en repositorios de Bitbucket
 - ✅ Muestra historias asignadas en el sprint actual de Jira
 - ⏱️ Permite registrar tiempo en las historias de Jira
 - 💬 Agrega comentarios automáticamente a las historias
 - 🌐 Interfaz web intuitiva
+- 🔄 Flexibilidad para elegir entre OpenAI y Gemini
 
 ## 📋 Requisitos Previos
 
@@ -17,7 +18,7 @@ Herramienta web que automatiza la generación de mensajes de commit y el registr
 - Credenciales configuradas para:
   - Bitbucket
   - Jira
-  - OpenAI
+  - OpenAI o Gemini (según tu preferencia)
 
 ## 🛠️ Configuración
 
@@ -45,21 +46,35 @@ D:\CURSOR PROYECT\
    ```
    - Edita el archivo `.env` con tus credenciales:
      - Bitbucket: Username y App Password
-     - OpenAI: API Key
+     - IA: Elige entre OpenAI o Gemini
      - Jira: Email y API Token
 
-   > ⚠️ **IMPORTANTE**: Nunca compartas o subas al repositorio tu archivo `.env`
+3. **Configuración de IA**
+   
+   Puedes elegir entre dos proveedores de IA:
 
-3. **Obtención de Credenciales**
+   **Para OpenAI:**
+   ```env
+   AI_PROVIDER=openai
+   OPENAI_API_KEY=tu_api_key_de_openai
+   ```
+   - Obtén tu API key en: https://platform.openai.com/api-keys
+
+   **Para Gemini:**
+   ```env
+   AI_PROVIDER=gemini
+   GEMINI_API_KEY=tu_api_key_de_gemini
+   ```
+   - Obtén tu API key en: https://console.cloud.google.com/
+   - Ve a: APIs y Servicios > Credenciales
+   - Crea una nueva API key
+
+4. **Obtención de Otras Credenciales**
    - **Bitbucket App Password**:
      1. Ve a Bitbucket.org → Tu perfil
      2. Personal Settings → App Passwords
      3. Create app password
      4. Selecciona permisos de lectura de repositorio
-
-   - **OpenAI API Key**:
-     1. Ve a platform.openai.com
-     2. API keys → Create new secret key
 
    - **Jira API Token**:
      1. Ve a id.atlassian.net
@@ -84,7 +99,7 @@ docker run -p 5000:5000 -it commit-generator
 ## 🔄 Flujo de Trabajo
 
 1. La aplicación muestra los últimos cambios del repositorio
-2. Genera un mensaje de commit usando IA
+2. Genera un mensaje de commit usando la IA seleccionada
 3. Puedes aceptar el mensaje generado o escribir uno personalizado
 4. Selecciona una historia de Jira y registra el tiempo
 
@@ -100,6 +115,11 @@ docker stop commit-generator
 docker build -t commit-generator .
 docker run -p 5000:5000 -it commit-generator
 ```
+
+3. **Errores comunes:**
+   - Error 401: Verifica tus credenciales de Bitbucket
+   - Error de IA: Verifica la API key y el proveedor seleccionado
+   - Error de Jira: Confirma el API token
 
 ## 🔐 Seguridad
 

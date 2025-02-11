@@ -1,5 +1,6 @@
 import os
 from openai import OpenAI
+import google.generativeai as genai
 from typing import List, Dict
 from dataclasses import dataclass
 from dotenv import load_dotenv
@@ -13,12 +14,23 @@ class FileChange:
 class CommitMessageGenerator:
     def __init__(self):
         load_dotenv()
-        # Configurar OpenAI con la API key
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY no está configurada en el archivo .env")
+        self.ai_provider = os.getenv('AI_PROVIDER', 'openai').lower()
         
-        self.client = OpenAI(api_key=api_key)
+        print(f"Usando proveedor de IA: {self.ai_provider}")
+        
+        if self.ai_provider == 'openai':
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                raise ValueError("OPENAI_API_KEY no está configurada en el archivo .env")
+            self.client = OpenAI(api_key=api_key)
+        elif self.ai_provider == 'gemini':
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY no está configurada en el archivo .env")
+            genai.configure(api_key=api_key)
+            self.model = genai.GenerativeModel('gemini-pro')
+        else:
+            raise ValueError("AI_PROVIDER debe ser 'openai' o 'gemini'")
 
     def analyze_changes(self, file_changes: List[FileChange]) -> Dict:
         # Agrupar cambios por tipo
@@ -63,20 +75,23 @@ class CommitMessageGenerator:
         """
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": """Eres un experto en generar mensajes de commit detallados y bien estructurados.
-                        Tus mensajes siempre incluyen contexto suficiente y explican claramente los cambios realizados.
-                        Prefieres ser específico y detallado en lugar de vago o general."""
-                    },
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            
-            return response.choices[0].message.content
+            if self.ai_provider == 'openai':
+                response = self.client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {
+                            "role": "system", 
+                            "content": """Eres un experto en generar mensajes de commit detallados y bien estructurados.
+                            Tus mensajes siempre incluyen contexto suficiente y explican claramente los cambios realizados.
+                            Prefieres ser específico y detallado en lugar de vago o general."""
+                        },
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                return response.choices[0].message.content
+            else:  # gemini
+                response = self.model.generate_content(prompt)
+                return response.text
             
         except Exception as e:
             print(f"Error al generar el mensaje de commit: {str(e)}")
